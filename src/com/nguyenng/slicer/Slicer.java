@@ -1,51 +1,41 @@
 package com.nguyenng.slicer;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.imageio.ImageIO;
 
-import com.nguyenng.slicer.slice.Slice;
-
 public class Slicer {
-	private List<Slice> slices;
 	private BufferedImage image;
 	private int width, height;
+	private String filepath;
 
-	public Slicer(String path) {
-		image = null;
+	public Slicer(File file) {
+		this.image = null;
 		try {
-			image = ImageIO.read(Slicer.class.getResourceAsStream(path));
+			this.image = ImageIO.read(file);
+			this.filepath = file.getAbsolutePath().substring(0, file.getAbsolutePath().indexOf("."));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 
-		this.width = image.getWidth();
-		this.height = image.getHeight();
+		this.width = this.image.getWidth();
+		this.height = this.image.getHeight();
 	}
 
 	public void slice(int tileW, int tileH) {
-		this.slices = new ArrayList<>();
-
 		for (int y = 0; y < this.height / tileH; y++) {
 			for (int x = 0; x < this.width / tileW; x++) {
-				int newX = (x == 0) ? 0 : x * tileW;
-				int newY = (y == 0) ? 0 : y * tileH;
-				int[] p = image.getRGB(newX, newY, tileW, tileH, null, 0, tileW);
-
-				Slice newSlice = new Slice(p, tileW, tileH);
-				slices.add(newSlice);
+				int[] p = this.image.getRGB(x * tileW, y * tileH, tileW, tileH, null, 0, tileW);
+				BufferedImage tile = new BufferedImage(tileW, tileH, BufferedImage.TYPE_INT_ARGB);
+				tile.setRGB(0, 0, tileW, tileH, p, 0, tileW);
+				try {
+					ImageIO.write(tile, "png", new File(this.filepath + "-output" + (y * tileW + x) + ".png"));
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 		}
-	}
-
-	public List<Slice> getSlices() {
-		return slices;
-	}
-
-	public void setSlices(List<Slice> slices) {
-		this.slices = slices;
 	}
 }
